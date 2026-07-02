@@ -815,10 +815,10 @@ body{font-family:var(--ff);background:var(--bg);color:var(--txt);min-height:100v
         autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <div class="login-err" id="li-err" role="alert">E-mail ou palavra-passe incorrectos.</div>
-    <button class="btn s" style="width:100%;justify-content:center;padding:11px" onclick="doLogin()">
+    <button class="btn s" id="li-btn" style="width:100%;justify-content:center;padding:11px" onclick="doLogin()">
       Entrar no sistema
     </button>
-    <div class="login-footer">NÓMA · Sistema de Gestão da Qualidade · v4.0.0</div>
+    <div class="login-footer">NÓMA · Sistema de Gestão da Qualidade · v5.0 · nuvem activa</div>
   </div>
 </div>
 
@@ -1133,6 +1133,9 @@ const CONFIG = Object.freeze({
   storageKey: 'noma_sgq_v3',
   alertDaysWarning: 60,
   alertDaysCritical: 21,
+  // ── BANCO CENTRAL NÓMA (provisionado pelo NÓMA, cliente não configura) ──
+  supabaseUrl: 'https://lpoxqbgszyubhcxdfstx.supabase.co',
+  supabaseKey: 'sb_publishable_rTXW8gES2Xh_am1aW4aMRQ_lKnfRXBY',
 });
 
 /* ═══════════════════════════════════════════════════════════
@@ -1941,8 +1944,8 @@ function saveNC(){
   let d='',dias=NaN;
   if(prazoISO){ const p=prazoISO.split('-'); d=p[2]+'/'+p[1]+'/'+p[0]; dias=daysFromNow(prazoISO); }
   ncs.push({id,t,causa:desc,origem,r:resp,date:prazoISO,d,dias,gravidade:grav,s:'Aberta',sc:'a',criadaEm:new Date().toISOString()});
-  const ok=STORE.set('clientNCs',ncs); STATE.ncs=ncs; syncToSupabase('clientNCs',ncs);
-  closeNCForm(); if(typeof toast2==='function') toast2(ok?(id+' registada'):'Guardada localmente',ok?'ok':'');
+  STORE.set('clientNCs',ncs); STATE.ncs=ncs;
+  closeNCForm(); saveAndToast('clientNCs',ncs,id+' registada');
   go('nc',document.querySelector('[data-p=nc]'));
 }
 
@@ -2408,10 +2411,9 @@ function saveUploadedDoc(){
       data:new Date().toLocaleDateString('pt-PT'), status:'rascunho', aprovadoPor:null, dataAprovacao:null,
       conteudo, resp, ativo:true, origem:'upload', classificado:false,
       historico:[{acao:'carregado',por:resp||'—',data:now}], criadoEm:now });
-    const ok=STORE.set('repoDocs',docs);
-    if(typeof syncToSupabase==='function') syncToSupabase('repoDocs',docs);
+    STORE.set('repoDocs',docs);
     _closeM('uploadFormModal');
-    if(typeof toast2==='function') toast2(ok?(id+' carregado (v1.0)'):'Guardado localmente',ok?'ok':'');
+    saveAndToast('repoDocs',docs,id+' carregado (v1.0)');
     // Guardar o id do último upload para a Etapa 3 (sugestão IA opcional)
     STATE._lastUploadId = id;
     go('docs',document.querySelector('[data-p=docs]'));
@@ -2637,13 +2639,12 @@ function confirmClassification(docId){
     doc.historico.push(auditEntry);
 
     STORE.set('repoDocs', docs);
-    if(typeof syncToSupabase==='function') syncToSupabase('repoDocs',docs);
     STATE._aiSuggestion = null;
     _closeM('aiSuggestModal');
     const msg = decisao==='corrigido' ? 'Classificação corrigida e registada'
               : decisao==='confirmado' ? 'Sugestão confirmada e registada'
               : 'Classificação registada';
-    if(typeof toast2==='function') toast2(msg+(reqIso?' · marca obrigatório ISO':''),'ok');
+    saveAndToast('repoDocs',docs,msg+(reqIso?' · marca obrigatório ISO':''));
     go('docs',document.querySelector('[data-p=docs]'));
   } catch(e){
     if(typeof registerError==='function') registerError(STATE.page||'docs','confirmClassification',e.message,e.stack);
@@ -2785,8 +2786,8 @@ function saveDoc(){
     nome:t, titulo:t, tipo, reqIso, cat:catMap[tipo]||'Geral', clausula:'—', versao:'v1.0',
     data:new Date().toLocaleDateString('pt-PT'), status:'rascunho', aprovadoPor:null, dataAprovacao:null,
     conteudo, resp, ativo:true, historico:[{acao:'criado',por:resp||'—',data:now}], criadoEm:now });
-  const ok=STORE.set('repoDocs',docs); syncToSupabase('repoDocs',docs);
-  closeDocForm(); if(typeof toast2==='function') toast2(ok?(id+' criado (v1.0)'):'Guardado localmente',ok?'ok':'');
+  STORE.set('repoDocs',docs);
+  closeDocForm(); saveAndToast('repoDocs',docs,id+' criado (v1.0)');
   go('docs',document.querySelector('[data-p=docs]'));
 }
 function saveDocBuilderToRepo(){
@@ -2838,8 +2839,8 @@ function saveKPI(){
   const atual=String(atualNum)+(unidade?' '+unidade:'');
   if(editId){ const k=kpis.find(x=>x.id===editId); if(k){ k.atualNum=atualNum; k.atual=atual; k.actualizadoEm=new Date().toISOString(); } }
   else{ const id='KPI-'+String(kpis.length+1).padStart(2,'0'); kpis.push({id,name:nome,meta:String(metaNum),metaNum,atual,atualNum,unidade,freq,clausula:'9.1',framework:'ISO 9001',resp:'',criadoEm:new Date().toISOString()}); }
-  const ok=STORE.set('clientKPIs',kpis); STATE.kpiData=kpis; syncToSupabase('clientKPIs',kpis);
-  closeKPIForm(); if(typeof toast2==='function') toast2(ok?(editId?'KPI actualizado':'KPI criado'):'Guardado localmente',ok?'ok':'');
+  STORE.set('clientKPIs',kpis); STATE.kpiData=kpis;
+  closeKPIForm(); saveAndToast('clientKPIs',kpis,editId?'KPI actualizado':'KPI criado');
   go('kpi',document.querySelector('[data-p=kpi]'));
 }
 
@@ -3158,9 +3159,8 @@ function saveDiagnostico(){
       historico,
     };
     STORE.set('diagnosticoQualitativo', registo);
-    if(typeof syncToSupabase==='function') syncToSupabase('diagnosticoQualitativo', registo);
     _closeM('diagFormModal');
-    if(typeof toast2==='function') toast2(prev?'Diagnóstico actualizado':'Diagnóstico concluído','ok');
+    saveAndToast('diagnosticoQualitativo', registo, prev?'Diagnóstico actualizado':'Diagnóstico concluído');
     go('diagnostico', document.querySelector('[data-p=diagnostico]'));
   } catch(e){
     if(typeof registerError==='function') registerError(STATE.page||'diagnostico','saveDiagnostico',e.message,e.stack);
@@ -3379,10 +3379,9 @@ function saveSipoc(){
       });
     }
     STORE.set('sipocs', sipocs);
-    if(typeof syncToSupabase==='function') syncToSupabase('sipocs', sipocs);
     STATE._sipocDraft = null; STATE._sipocEditId = null;
     _closeM('sipocFormModal');
-    if(typeof toast2==='function') toast2('SIPOC guardado','ok');
+    saveAndToast('sipocs', sipocs, 'SIPOC guardado');
     go('frameworks', document.querySelector('[data-p=frameworks]'));
   } catch(e){
     if(typeof registerError==='function') registerError(STATE.page||'frameworks','saveSipoc',e.message,e.stack);
@@ -3561,10 +3560,9 @@ function saveRisco(){
         historico:[{ acao:'criado', por:nome_p, papel, data:now }] });
     }
     STORE.set('riscos', riscos);
-    if(typeof syncToSupabase==='function') syncToSupabase('riscos', riscos);
     STATE._riscoEditId = null;
     _closeM('riscoFormModal');
-    if(typeof toast2==='function') toast2('Risco guardado','ok');
+    saveAndToast('riscos', riscos, 'Risco guardado');
 
     // Human-first: se alto/crítico, SUGERIR criar NC — cliente decide
     const cls = _classificaRisco(nivel);
@@ -3619,8 +3617,7 @@ function _createNCFromRisco(){
       ncs.push({ id, t:'Risco: '+desc.slice(0,80), d:desc, s:'Aberta', sc:'r',
         origem:'matriz-riscos', criadaEm:now, prazo:null });
       STORE.set('clientNCs', ncs); STATE.ncs = ncs;
-      if(typeof syncToSupabase==='function') syncToSupabase('clientNCs', ncs);
-      if(typeof toast2==='function') toast2(id+' criada a partir do risco','ok');
+      saveAndToast('clientNCs', ncs, id+' criada a partir do risco');
     }
     _closeM('riscoNCModal');
     go('frameworks', document.querySelector('[data-p=frameworks]'));
@@ -3879,7 +3876,6 @@ function save5PorquesForm(){
     }
 
     STORE.set('porques5', analises);
-    if(typeof syncToSupabase==='function') syncToSupabase('porques5', analises);
 
     // Integração human-first: se ligada a NC, sugere escrever a causa raiz de volta
     if(ncLigada){
@@ -3901,7 +3897,7 @@ function save5PorquesForm(){
     STATE._5pDraft = null;
     STATE._5pEditId = null;
     _closeM('pq5FormModal');
-    if(typeof toast2==='function') toast2('Análise guardada','ok');
+    saveAndToast('porques5', analises, 'Análise guardada');
     go('frameworks', document.querySelector('[data-p=frameworks]'));
   } catch(e){
     if(typeof registerError==='function') registerError(STATE.page||'frameworks','save5PorquesForm',e.message,e.stack);
@@ -4132,11 +4128,10 @@ function saveProcessoForm(){
     }
 
     STORE.set('processos', processos);
-    if(typeof syncToSupabase==='function') syncToSupabase('processos', processos);
     STATE._procDraft = null;
     STATE._procEditId = null;
     _closeM('procFormModal');
-    if(typeof toast2==='function') toast2('Mapa guardado','ok');
+    saveAndToast('processos', processos, 'Mapa guardado');
     go('frameworks', document.querySelector('[data-p=frameworks]'));
   } catch(e){
     if(typeof registerError==='function') registerError(STATE.page||'frameworks','saveProcessoForm',e.message,e.stack);
@@ -4380,11 +4375,10 @@ function saveRACIForm(){
       });
     }
     STORE.set('racis', racis);
-    if(typeof syncToSupabase==='function') syncToSupabase('racis', racis);
     STATE._raciDraft = null;
     STATE._raciEditId = null;
     _closeM('raciFormModal');
-    if(typeof toast2==='function') toast2('RACI guardado','ok');
+    saveAndToast('racis', racis, 'RACI guardado');
     go('frameworks', document.querySelector('[data-p=frameworks]'));
   } catch(e){
     if(typeof registerError==='function') registerError(STATE.page||'frameworks','saveRACIForm',e.message,e.stack);
@@ -4684,11 +4678,10 @@ function saveSWOTForm(){
     }
     
     STORE.set('swots', swots);
-    if(typeof syncToSupabase==='function') syncToSupabase('swots', swots);
     STATE._swotDraft = null;
     STATE._swotEditId = null;
     _closeM('swotFormModal');
-    if(typeof toast2==='function') toast2('SWOT guardado','ok');
+    saveAndToast('swots', swots, 'SWOT guardado');
     go('frameworks', document.querySelector('[data-p=frameworks]'));
   } catch(e){
     if(typeof registerError==='function') registerError(STATE.page||'frameworks','saveSWOTForm',e.message,e.stack);
@@ -4911,11 +4904,10 @@ function saveEsforcoForm(){
     }
     
     STORE.set('esforcos', esforcos);
-    if(typeof syncToSupabase==='function') syncToSupabase('esforcos', esforcos);
     STATE._esforcoDraft = null;
     STATE._esforcoEditId = null;
     _closeM('esforcoFormModal');
-    if(typeof toast2==='function') toast2('Matriz guardada','ok');
+    saveAndToast('esforcos', esforcos, 'Matriz guardada');
     go('frameworks', document.querySelector('[data-p=frameworks]'));
   } catch(e){
     if(typeof registerError==='function') registerError(STATE.page||'frameworks','saveEsforcoForm',e.message,e.stack);
@@ -5094,11 +5086,10 @@ function saveKirkForm(){
     }
     
     STORE.set('kirks', kirks);
-    if(typeof syncToSupabase==='function') syncToSupabase('kirks', kirks);
     STATE._kirkDraft = null;
     STATE._kirkEditId = null;
     _closeM('kirkFormModal');
-    if(typeof toast2==='function') toast2('Avaliação guardada','ok');
+    saveAndToast('kirks', kirks, 'Avaliação guardada');
     go('frameworks', document.querySelector('[data-p=frameworks]'));
   } catch(e){
     if(typeof registerError==='function') registerError(STATE.page||'frameworks','saveKirkForm',e.message,e.stack);
@@ -5378,11 +5369,10 @@ function saveBSCForm(){
     }
     
     STORE.set('bscs', bscs);
-    if(typeof syncToSupabase==='function') syncToSupabase('bscs', bscs);
     STATE._bscDraft = null;
     STATE._bscEditId = null;
     _closeM('bscFormModal');
-    if(typeof toast2==='function') toast2('BSC guardado','ok');
+    saveAndToast('bscs', bscs, 'BSC guardado');
     go('frameworks', document.querySelector('[data-p=frameworks]'));
   } catch(e){
     if(typeof registerError==='function') registerError(STATE.page||'frameworks','saveBSCForm',e.message,e.stack);
@@ -5474,8 +5464,8 @@ function fecharNC(id){
   const ncs=getClientNCs(); const nc=ncs.find(n=>n.id===id);
   if(!nc) return;
   nc.s='Fechada'; nc.sc='t'; nc.fechadaEm=new Date().toISOString();
-  STORE.set('clientNCs',ncs); STATE.ncs=ncs; syncToSupabase('clientNCs',ncs);
-  if(typeof toast2==='function') toast2(id+' fechada','ok');
+  STORE.set('clientNCs',ncs); STATE.ncs=ncs;
+  saveAndToast('clientNCs',ncs,id+' fechada');
   go('nc',document.querySelector('[data-p=nc]'));
 }
 
@@ -5563,7 +5553,7 @@ function getSettings(){
     };
   }catch(e){ return Object.assign({}, DEFAULT_SETTINGS, { reqDocs: DEFAULT_REQ_DOCS.map(r=>({id:r.id,n:r.n})) }); }
 }
-function saveSettings(s){ const ok=STORE.set('nomaSettings', s); syncToSupabase('nomaSettings', s); return ok; }
+function saveSettings(s){ return STORE.set('nomaSettings', s); }
 
 let _setDraft = null;
 function openSettingsPanel(){
@@ -5629,8 +5619,8 @@ function saveSettingsPanel(){
   const w=_setDraft.weights; const sum=w.doc+w.nc+w.evid+w.kpi;
   if(sum!==100){ _mstatus('settingsPanel-status','Os pesos da prontidão devem somar 100% (actual: '+sum+'%).'); return; }
   if(!_setDraft.reqDocs.length){ _mstatus('settingsPanel-status','A lista de documentos obrigatórios não pode ficar vazia.'); return; }
-  const ok=saveSettings(_setDraft);
-  _closeM('settingsPanel'); if(typeof toast2==='function') toast2(ok?'Definições guardadas':'Guardado localmente',ok?'ok':'');
+  saveSettings(_setDraft);
+  _closeM('settingsPanel'); saveAndToast('nomaSettings', _setDraft, 'Definições guardadas');
   if(STATE.page) go(STATE.page, document.querySelector(`[data-p="${STATE.page}"]`));
 }
 
@@ -6205,6 +6195,7 @@ kpi() {
         <div style="font-size:12px;color:var(--mut);margin-top:2px">${data.length} indicadores · ISO 9001 + Kirkpatrick + LOPD · Actualizado: ${new Date().toLocaleDateString('pt-PT')}</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn t" onclick="openKPIForm()">+ Novo KPI</button>
         <label class="btn g" style="cursor:pointer" role="button">
           📂 Importar CSV
           <input type="file" accept=".csv" style="display:none" onchange="dropCSV({dataTransfer:{files:this.files}})">
@@ -6243,7 +6234,7 @@ kpi() {
           <div style="flex:0 0 80px;font-family:var(--ff);font-size:11px;font-weight:700;color:${sc}">${k.id}</div>
           <div style="flex:1;min-width:200px">
             <div style="font-size:13.5px;font-weight:600;color:var(--txt);margin-bottom:2px">${k.name}</div>
-            <div style="font-size:11px;color:var(--mut)">${k.clausula} · ${k.framework} · ${k.resp}</div>
+            <div style="font-size:11px;color:var(--mut)">${k.clausula||'—'} · ${k.framework||'ISO 9001'}${k.resp?' · '+k.resp:''}</div>
             <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
               <div class="pbar" style="flex:1;max-width:160px"><div class="pf" style="width:${w}%;background:${sc};height:5px"></div></div>
               <span style="font-size:11px;color:var(--mut)">${w}%</span>
@@ -6267,24 +6258,24 @@ kpi() {
             </span>
           </div>
         </div>
-        <div style="padding:6px 14px 10px;background:rgba(255,255,255,.01);border-bottom:1px solid var(--b1);font-size:12px;color:var(--mut)">
+        ${k.notas ? `<div style="padding:6px 14px 10px;background:rgba(255,255,255,.01);border-bottom:1px solid var(--b1);font-size:12px;color:var(--mut)">
           ${k.notas}
-        </div>`;
+        </div>` : ''}`;
       }).join('')}
     </div>
 
-    <!-- INSIGHTS -->
-    <div style="margin-top:16px;padding:14px 16px;background:rgba(232,184,75,.05);border:1px solid rgba(232,184,75,.15);border-radius:var(--r)">
+    <!-- INSIGHTS (isca de demonstração — só no modo DEMO) -->
+    ${CLIENT().isDemo ? `<div style="margin-top:16px;padding:14px 16px;background:rgba(232,184,75,.05);border:1px solid rgba(232,184,75,.15);border-radius:var(--r)">
       <div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:8px">⚡ Acções prioritárias para atingir metas</div>
       ${[
-        ['KPI-02','Contratar 3 formadores externos até 30/06/2026 (+12pp na taxa de conclusão)'],
-        ['KPI-08','Concluir RAT e DPA Egas Moniz até 30/05/2026 (LOPD 72% → 100%)'],
-        ['KPI-03','Tratar NC-001 e NC-002 até 30/05/2026 (0 NCs abertas)'],
-        ['KPI-05','Inscrever 4 auditores no curso Lead Auditor BV em Junho 2026'],
+        ['KPI-02','Contratar 3 formadores externos (+12pp na taxa de conclusão)'],
+        ['KPI-08','Concluir RAT e DPA Egas Moniz (LOPD 72% → 100%)'],
+        ['KPI-03','Tratar NC-001 e NC-002 (0 NCs abertas)'],
+        ['KPI-05','Inscrever 4 auditores no curso Lead Auditor BV'],
       ].map(([id,a])=>`<div style="font-size:12.5px;color:var(--txt);padding:4px 0;display:flex;gap:8px;border-bottom:1px solid var(--b1)">
         <span style="font-family:var(--ff);font-size:11px;font-weight:700;color:var(--gold);min-width:60px">${id}</span>${a}
       </div>`).join('')}
-    </div>
+    </div>` : ''}
   </div>`;
 },
 
@@ -9020,13 +9011,13 @@ document.addEventListener('keydown', e => {
 /* ═══════════════════════════════════════════════════════════
    LOGIN — simple auth gate
 ═══════════════════════════════════════════════════════════ */
-// Demo credentials (in production use Supabase Auth)
+// Demo credentials (isca de venda — gravam só local, nunca tocam o banco real).
+// Contas reais (ex: henrique@nomafrica.com) NÃO entram aqui: autenticam via Supabase Auth.
 const DEMO_USERS = {
   'admin@husll.ao': 'HUSLL2026',
   'filomena@husll.ao': 'HUSLL2026',
   'rui@husll.ao': 'HUSLL2026',
   'beatriz@husll.ao': 'HUSLL2026',
-  'henrique@nomafrica.com': 'NOMA2026',
 };
 
 function doLogin() {
@@ -9034,23 +9025,37 @@ function doLogin() {
     const email = (document.getElementById('li-email')?.value || '').trim().toLowerCase();
     const pw = document.getElementById('li-pw')?.value || '';
     const errEl = document.getElementById('li-err');
+    if (errEl) errEl.style.display = 'none';
 
-    // Try Supabase first if configured
-    const supUrl = STORE.get('supabaseUrl');
-    const supKey = STORE.get('supabaseKey');
-    if (window._supabase && supUrl && supKey) {
+    // ── CLIENTE REAL: demo users nunca tocam o banco. Vão direto pro fallback local ──
+    if (DEMO_USERS[email]) {
+      checkDemoLogin(email, pw, errEl);
+      return;
+    }
+
+    // ── CLIENTE REAL: autentica via Supabase Auth de verdade ──
+    if (window._supabase) {
+      const btn = document.getElementById('li-btn');
+      if (btn) { btn.disabled = true; btn.dataset._t = btn.textContent; btn.textContent = 'A entrar…'; }
       window._supabase.auth.signInWithPassword({ email, password: pw })
         .then(({ data, error }) => {
-          if (error) { if (errEl) errEl.style.display='block'; return; }
-          if (data.session) { completeLogin(email); }
-        }).catch(() => {
-          // Fallback to demo users
-          checkDemoLogin(email, pw, errEl);
+          if (btn) { btn.disabled = false; if (btn.dataset._t) btn.textContent = btn.dataset._t; }
+          if (error || !data || !data.session) {
+            if (errEl) { errEl.textContent = 'Email ou senha incorrectos.'; errEl.style.display = 'block'; }
+            return;
+          }
+          // Sessão Supabase válida → auth.email() agora tem valor → RLS funciona
+          completeLogin(email, true);
+        }).catch((e) => {
+          if (btn) { btn.disabled = false; if (btn.dataset._t) btn.textContent = btn.dataset._t; }
+          if (errEl) { errEl.textContent = 'Sem ligação ao servidor. Tenta novamente.'; errEl.style.display = 'block'; }
+          try{console.error('[NÓMA] login error:', e);}catch(_){}
         });
       return;
     }
 
-    checkDemoLogin(email, pw, errEl);
+    // SDK ainda a carregar / offline
+    if (errEl) { errEl.textContent = 'A ligar ao servidor… tenta de novo em segundos.'; errEl.style.display = 'block'; }
   } catch (err) {
     try{console.error('[NÓMA] login error:', err);}catch(e){}
   }
@@ -9058,20 +9063,30 @@ function doLogin() {
 
 function checkDemoLogin(email, pw, errEl) {
   if (DEMO_USERS[email] && DEMO_USERS[email] === pw) {
-    completeLogin(email);
+    completeLogin(email, false); // false = demo, grava só local
   } else {
-    if (errEl) errEl.style.display = 'block';
+    if (errEl) { errEl.textContent = 'Email ou senha incorrectos.'; errEl.style.display = 'block'; }
   }
 }
 
-function completeLogin(email) {
+function completeLogin(email, isCloud) {
   try {
     STORE.set('sessionEmail', email);
     STORE.set('sessionTime', Date.now());
+    STORE.set('sessionCloud', !!isCloud); // true = Supabase Auth real; false = demo local
     const overlay = document.getElementById('loginOverlay');
     if (overlay) overlay.style.display = 'none';
     const firstName = email.split('@')[0];
     toast2(`Bem-vindo, ${firstName} ✓`);
+
+    // ── CLIENTE REAL: puxa dados da nuvem para este utilizador ──
+    if (isCloud && window._supabase) {
+      loadFromSupabase().then(() => {
+        STATE.kpiData = STORE.get('kpiData');
+        STATE.checkedItems = STORE.get('checkedItems') || {};
+        if (STATE.page) go(STATE.page, document.querySelector(`[data-p="${STATE.page}"]`));
+      }).catch(()=>{});
+    }
 
     // ── PONTO 1: ENTRADA CONTROLADA ────────────────────────────
     // Verificar se é primeira vez
@@ -9247,20 +9262,45 @@ function initSupabase(url, key) {
   }
 }
 
+// Grava no banco central. Só actua com sessão Supabase Auth real (cliente real).
+// Demo (sessionCloud=false) nunca toca a nuvem — fica local, como deve ser.
+// Retorna true SÓ se gravou de facto na nuvem. Qualquer outro caso → false.
 async function syncToSupabase(key, value) {
-  if (!window._supabase) return false;
+  // Demo ou sem SDK → não é erro, é local por design
+  if (!window._supabase || !STORE.get('sessionCloud')) return false;
   try {
-    const email = STORE.get('sessionEmail') || 'anonymous';
+    const { data: sess } = await window._supabase.auth.getSession();
+    const email = sess && sess.session && sess.session.user ? sess.session.user.email : null;
+    if (!email) return false; // sessão cloud caiu → trata como local
     const { error } = await window._supabase
       .from('noma_state')
       .upsert({ user_email: email, key, value: JSON.stringify(value), updated_at: new Date().toISOString() },
                { onConflict: 'user_email,key' });
-    if(error) registerError(STATE.page||'sync', 'supabaseUpsert', error.message, '');
-    return !error;
-  } catch(e) { 
+    if (error) { registerError(STATE.page||'sync', 'supabaseUpsert', error.message, ''); return false; }
+    return true;
+  } catch(e) {
     registerError(STATE.page||'sync', 'supabaseSync', e.message, e.stack);
     return false;
   }
+}
+
+// ── TOAST HONESTO ──────────────────────────────────────────────
+// Grava local (STORE.set já feito pelo chamador), depois tenta a nuvem,
+// e o toast diz a VERDADE: "na nuvem ✓" só se gravou mesmo; senão "guardado localmente".
+// Uso: saveAndToast('clientKPIs', kpis, 'KPI criado');
+async function saveAndToast(key, value, okMsg) {
+  const cloud = await syncToSupabase(key, value);
+  if (typeof toast2 !== 'function') return cloud;
+  if (cloud) {
+    toast2(`${okMsg} · na nuvem ✓`, 'ok');
+  } else if (STORE.get('sessionCloud')) {
+    // Era pra ir pra nuvem mas falhou — avisa honestamente (não mente)
+    toast2(`${okMsg} · guardado localmente (sem ligação à nuvem)`, 'warn');
+  } else {
+    // Sessão demo — local é o comportamento correcto, sem alarme
+    toast2(`${okMsg} · guardado localmente`, 'ok');
+  }
+  return cloud;
 }
 
 async function loadFromSupabase() {
@@ -9352,20 +9392,28 @@ function injectFictionalData() {
     STATE.apiKey = sessionStorage.getItem('noma_apiKey') || null;
     initGovernanca();
 
-    // Init Supabase if configured
-    const supUrl = STORE.get('supabaseUrl');
-    const supKey = STORE.get('supabaseKey');
+    // ── Init BANCO CENTRAL NÓMA (sempre — provisionado, não configurável) ──
+    // Prioriza credenciais embutidas no CONFIG; STORE só como override manual (legado)
+    const supUrl = CONFIG.supabaseUrl || STORE.get('supabaseUrl');
+    const supKey = CONFIG.supabaseKey || STORE.get('supabaseKey');
     if (supUrl && supKey) {
-      // Load Supabase SDK dynamically
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
       script.onload = () => {
         initSupabase(supUrl, supKey);
-        loadFromSupabase().then(() => {
-          STATE.kpiData = STORE.get('kpiData');
-          STATE.checkedItems = STORE.get('checkedItems') || {};
-        });
+        // Se houver sessão Supabase Auth activa, recarrega dados da nuvem
+        if (window._supabase) {
+          window._supabase.auth.getSession().then(({ data }) => {
+            if (data && data.session) {
+              loadFromSupabase().then(() => {
+                STATE.kpiData = STORE.get('kpiData');
+                STATE.checkedItems = STORE.get('checkedItems') || {};
+              });
+            }
+          }).catch(()=>{});
+        }
       };
+      script.onerror = () => { try{console.error('[NÓMA] Falha ao carregar SDK Supabase (offline?)');}catch(e){} };
       document.head.appendChild(script);
     }
 
