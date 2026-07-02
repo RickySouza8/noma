@@ -9813,7 +9813,8 @@ function validarAprovacoes() {
 
 function getRepoDoc(docId) {
   const saved = STORE.get('repoDocs');
-  const source = saved || REPO_DOCS;
+  // cliente real: só STORE, nunca cai na seed HUSLL. Demo: fallback à seed (isca).
+  const source = saved || (CLIENT().isDemo ? REPO_DOCS : []);
   return source.find(d => d.id === docId) || null;
 }
 
@@ -10095,7 +10096,8 @@ function criarNovaVersao(docId) {
 
 /* ── KPI → Alertas automáticos ──────────────────────────── */
 function gerarAlertasKPI() {
-  const kpis = STATE.kpiData || DEFAULT_KPI;
+  // cliente real: só os KPIs dele; nunca a seed HUSLL.
+  const kpis = STATE.kpiData || (CLIENT().isDemo ? DEFAULT_KPI : []);
   const failing = kpis.filter(k => k.status === 'fail');
   if (failing.length === 0) return;
 
@@ -10256,18 +10258,20 @@ function validaSistema() {
 
   // ── STORE: guard contra corrupção ──────────────────────────
   let docs;
+  // cliente real: seed HUSLL nunca é fonte de fallback (só demo herda a isca).
+  const seedFallback = () => CLIENT().isDemo ? REPO_DOCS.map(d => Object.assign({}, d)) : [];
   try {
     const raw = STORE.get('repoDocs');
     if (raw && (!Array.isArray(raw) || raw.length === 0)) {
       console.warn('[NÓMA] STORE.repoDocs corrompido ou vazio — recarregando padrão');
       STORE.set('repoDocs', null);
-      docs = REPO_DOCS.map(d => Object.assign({}, d));
+      docs = seedFallback();
     } else {
-      docs = raw ? raw.map(d => Object.assign({}, d)) : REPO_DOCS.map(d => Object.assign({}, d));
+      docs = raw ? raw.map(d => Object.assign({}, d)) : seedFallback();
     }
   } catch(e) {
     console.error('[NÓMA] STORE.repoDocs corrompido — usando padrão', e);
-    docs = REPO_DOCS.map(d => Object.assign({}, d));
+    docs = seedFallback();
     STORE.set('repoDocs', null);
   }
 
@@ -10318,7 +10322,8 @@ function validaSistema() {
   });
 
   // ── PARTE 1.4: KPI sem status → default 'partial' ─────────
-  const kpis = STATE.kpiData || DEFAULT_KPI;
+  // cliente real: só os KPIs dele; nunca a seed HUSLL.
+  const kpis = STATE.kpiData || (CLIENT().isDemo ? DEFAULT_KPI : []);
   kpis.forEach(k => {
     if (!k.status) { k.status = 'partial'; dirty = true; avisos.push(k.id + ': sem status → partial'); }
   });
