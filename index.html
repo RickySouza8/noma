@@ -980,7 +980,7 @@ body{font-family:var(--ff);background:var(--bg);color:var(--txt);min-height:100v
       <div class="client-logo-circle" id="clientLogoCircle"
         style="background:var(--teal)">H</div>
       <div>
-        <div class="client-name" id="clientNameDisplay">HUSLL</div>
+        <div class="client-name" id="clientNameDisplay">O meu SGQ</div>
         <div class="client-sector" id="clientSectorDisplay">Hospital · Angola</div>
       </div>
     </div>
@@ -1130,7 +1130,7 @@ const CONFIG = Object.freeze({
   country: 'Angola',
   sector: 'Saúde / Educação',
   buildDate: '2026-05-13',
-  storageKey: 'noma_sgq_v3',
+  storageKey: 'noma_real_v5',
   alertDaysWarning: 60,
   alertDaysCritical: 21,
   // ── BANCO CENTRAL NÓMA (provisionado pelo NÓMA, cliente não configura) ──
@@ -1147,28 +1147,7 @@ const STORE = (() => {
     kpiData: null,
     dismissedAlerts: [],
     checkedItems: {},
-    manualFields: {
-      '4.1.contexto_externo':'Angola — mercado em crescimento. PNDS 2023-2027 exige certificação. MINSA reforça fiscalização. Concorrência hospitalar privada em expansão em Luanda.',
-      '4.1.contexto_interno':'Hospital universitário com 450 leitos, 1.240 colaboradores, 4 especialidades principais. Estrutura hierárquica com Director Geral, 3 Directores Clínicos e 8 chefes de departamento.',
-      '4.2.partes_interessadas':'MINSA (regulador), Utentes/doentes, Colaboradores, Formandos internos, Parceiros académicos (UAN, Egas Moniz), Bureau Veritas (certificação), Seguradoras, INADP (LOPD).',
-      '4.3.escopo':'O Sistema de Gestão da Qualidade do HUSLL abrange a Área de Educação Continuada, incluindo todas as actividades de planeamento, execução e avaliação de formação profissional dos colaboradores. Sede: Rua da Unidade Africana, 26, Maianga, Luanda.',
-      '5.1.compromisso':'O Director Geral, Dr. António Mbala Fernandes, lidera o SGQ por via directa, preside à Revisão pela Gestão trimestralmente e assegura os recursos necessários à implementação e melhoria contínua.',
-      '5.2.politica':'Aprovada em versão 3.0, data 15/03/2026. Pendente de assinatura pela Direcção (NC-002). Comunicada a todos os colaboradores via email e afixada na área de Educação.',
-      '5.3.papeis':'RQ: Dra. Filomena Neto Cardoso. EPD: Eng.º Rui Gaspar. Coord. Educação: Beatriz Loureiro. Auditor Interno: Dr. Cândido Ferreira.',
-      '6.1.riscos':'Risco 1: Perda de formadores qualificados — Mitigação: pool de 8 formadores qualificados. Risco 2: Não conformidades na auditoria — Mitigação: sistema NÓMA SGQ activo. Risco 3: Incumprimento LOPD — Mitigação: EPD dedicado e RAT em curso.',
-      '6.2.objetivos':'5 objectivos SMART aprovados para 2026: OBJ-01 Satisfação ≥90%; OBJ-02 Conclusão ≥90%; OBJ-03 Zero NCs em Jun/26; OBJ-04 LOPD 100% Mai/26; OBJ-05 12 auditores formados Set/26.',
-      '7.1.recursos':'Orçamento formativo 2026: USD 42.000 aprovado. 3 salas de formação (cap. 20/40/80 pax). Sistema NÓMA SGQ. Plataforma e-learning em implementação.',
-      '7.2.competencias':'Matriz de competências actualizada. Registo de competências (DOC-008) aprovado. 4 colaboradores certificados ISO 9001. Plano de formação de auditores em curso.',
-      '7.4.comunicacao':'Reunião mensal da Equipa de Qualidade. Newsletter SGQ trimestral. Dashboard NÓMA SGQ disponível 24/7. Revisão pela Gestão trimestral.',
-      '7.5.documentados':'12 documentos no repositório. Sistema de versionamento activo. Acesso controlado por perfil. Aprovação via fluxo formalizado.',
-      '8.1.planeamento':'Plano de Formação Anual 2026 aprovado. 48 acções de formação planeadas. Orçamento aprovado. Formadores contratados (24) e em processo (3 a contratar).',
-      '8.3.design':'Currículo validado por Director Clínico e Coord. Educação. Metodologias: presencial, e-learning, simulação. Avaliação Kirkpatrick L1-L4 obrigatória.',
-      '9.1.monitoramento':'12 KPIs monitorizados mensalmente. Satisfação formandos: 87%. Taxa conclusão: 78%. KPIs reportados em Revisão pela Gestão trimestralmente.',
-      '9.2.auditoria':'Plano de Auditoria Interna aprovado. Auditoria agendada: 15-18 Julho 2026. Auditor: Dr. Cândido Ferreira. Bureau Veritas agendado para Setembro 2026.',
-      '9.3.revisao':'T1/2026: realizada em 28/04/2026. Presentes: Director Geral, RQ, EPD, Coord. Educação, Auditor. Decisões registadas em DOC-007.',
-      '10.1.melhoria':'Processo de melhoria contínua activo. 2 NCs abertas e em tratamento. Lições aprendidas documentadas. Ciclo PDCA aplicado a todos os processos.',
-      '10.2.nc':'NC-001: Registos de formação incompletos — em tratamento (Beatriz). NC-002: Política não assinada — prazo crítico 20/05/2026 (Director).',
-    },
+    manualFields: {},  // REAL BUILD: nasce vazio, sem defaults HUSLL (cliente preenche via onboarding)
     theme: 'dark',
     lastVisited: 'dashboard',
     apiKey: null,
@@ -1240,14 +1219,14 @@ const STATE = {
   apiKey: sessionStorage.getItem('noma_apiKey') || null,
   dailyTasks: { alerts:false, nc:false, kpi:false, registo:false },
   clientProfile: STORE.get('clientProfile') || {
-    name: 'Hospital Universitário São Lucas de Luanda',
-    shortName: 'HUSLL',
-    director: 'Dr. António Mbala Fernandes',
-    rq: 'Dra. Filomena Neto Cardoso',
-    sector: 'hospital',
-    city: 'Luanda, Angola',
+    name: '',
+    shortName: 'O meu SGQ',
+    director: '',
+    rq: '',
+    sector: '',
+    city: '',
     logoColor: '#00D4B4',
-    logoLetter: 'H',
+    logoLetter: '·',
     isPersonalized: false,
   },
   behaviors: STORE.get('behaviors') || {
@@ -1504,7 +1483,7 @@ function renderAlert(a) {
 /* CLIENT() — identidade activa: cliente personalizado (wizard) com fallback p/ demo HUSLL (isca) */
 function CLIENT(){
   var cp = (typeof STATE!=='undefined' && STATE && STATE.clientProfile) ? STATE.clientProfile : null;
-  var real = !!(cp && cp.isPersonalized);
+  var real = true; // REAL BUILD: sempre cliente real. isDemo nunca activa; seed HUSLL inalcançável por qualquer rota.
   // cliente real: campo em falta cai pra NEUTRO (nunca HUSLL). Demo: mantém fallback HUSLL (isca).
   var fb = real
     ? { nome:'', sigla:'', director:'', rq:'', cidade:'', sector:'' }
